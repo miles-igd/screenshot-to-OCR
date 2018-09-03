@@ -1,14 +1,15 @@
-from tkinter import Tk, Canvas, Frame
-from PIL import ImageGrab, Image
+from tkinter import *
+from PIL import ImageGrab, Image, ImageTk
 import pytesseract
 import pyperclip
 
 class Clipper:
-    def __init__(self, master):
+    def __init__(self, master, parent):
         self.master = master
+        self.parent = parent
         self.master.attributes('-alpha', 0.2)
         self.master.overrideredirect(True)
-        self.frame = Canvas(self.master, width=master.winfo_screenwidth(), height=master.winfo_screenheight(), bg='white')
+        self.frame = Canvas(self.master, width=master.winfo_screenwidth(), height=master.winfo_screenheight(), bg='white', cursor="plus")
         self.frame.bind("<Button-1>", self.mousePress)
         self.frame.bind("<B1-Motion>", self.mouseMove)
         self.frame.bind("<ButtonRelease-1>", self.mouseDepress)
@@ -43,9 +44,12 @@ class Clipper:
         text = pytesseract.image_to_string(im, lang='jpn')
         with open("output.txt", "w", encoding='utf-8') as out:
             out.write(text)
+        self.parent.output_box.insert(END, text+'\n'+'------\n')
+        self.parent.updateImage(ImageTk.PhotoImage(self.resizeHeight(self.parent.image_box.winfo_height(),im)))
+
         print(text)
         pyperclip.copy(text)
 
-#root = Tk()
-#clipper = Clipper(root)
-#root.mainloop()
+    def resizeHeight(self, height, image):
+        ratio = height/image.size[1]
+        return image.resize((int(image.size[0]*ratio), int(height)))
