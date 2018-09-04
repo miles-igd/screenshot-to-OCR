@@ -213,6 +213,7 @@ class MainWindow:
         self.output_box.config(state=DISABLED)
 
     def translate(self, text):
+        text = text.replace('\n',"")
         translation = self.translator.translate(text, dest='en')
         print(translation)
         self.translate_box.config(state=NORMAL)
