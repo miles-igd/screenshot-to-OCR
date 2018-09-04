@@ -8,6 +8,7 @@ class Clipper:
         self.master = master
         self.parent = parent
         self.master.attributes('-alpha', 0.2)
+        self.master.attributes('-topmost', True)
         self.master.overrideredirect(True)
         self.frame = Canvas(self.master, width=master.winfo_screenwidth(), height=master.winfo_screenheight(), bg='white', cursor="plus")
         self.frame.bind("<Button-1>", self.mousePress)
@@ -42,14 +43,17 @@ class Clipper:
         im.save('output.png')
 
         text = pytesseract.image_to_string(im, lang='jpn')
+        text = text.replace('〈', 'く') #convert weird ku to right ku
         with open("output.txt", "w", encoding='utf-8') as out:
             out.write(text)
-        self.parent.output_box.insert(END, text+'\n'+'------\n')
-        self.parent.updateImage(ImageTk.PhotoImage(self.resizeHeight(self.parent.image_box.winfo_height(),im)))
+        self.parent.updateOutput(text)
+        self.parent.translate(text)
+        wsize = self.parent.image_box.winfo_width(), self.parent.image_box.winfo_height()
+        self.parent.updateImage(ImageTk.PhotoImage(self.resizeHeight(wsize,im)))
 
         print(text)
         pyperclip.copy(text)
 
-    def resizeHeight(self, height, image):
-        ratio = height/image.size[1]
-        return image.resize((int(image.size[0]*ratio), int(height)))
+    def resizeHeight(self, wsize, image):
+        ratio = min(wsize[0]/image.size[0], wsize[1]/image.size[1])
+        return image.resize((int(image.size[0]*ratio), int(image.size[1]*ratio)))
