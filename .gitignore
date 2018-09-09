@@ -1,8 +1,5 @@
-/__pycache__/
-output.png
-output.txt
-hello.py
-test.py
-one/
-two/
-output/
+*.jpg
+*.png
+*.txt
+__pycache__/
+_junk/
