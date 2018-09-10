@@ -226,7 +226,8 @@ class LeftPane(PanedWindow):
             else:
                 for filename, filepath in mask_files.items():
                     img = Image.open(filepath)
-                    boxer = scanner.Boxer(img, 25)
+                    width, height = img.size
+                    boxer = scanner.Boxer(img, width*0.020)
                     boxes[filename] = boxer.get_boxes()
                 with open((fp_out / 'boxes.json'), "w") as file:
                     json.dump(boxes, file)
@@ -243,8 +244,8 @@ class LeftPane(PanedWindow):
         else:
             (fp_out / '.lock').touch(exist_ok=True)
 
-        files_one = list(fp_one.glob('*.jpg'))
-        files_two = list(fp_two.glob('*.jpg'))
+        files_one = list(fp_one.glob('*.jpg')) + list(fp_one.glob('*.png')) + list(fp_one.glob('*.bmp'))
+        files_two = list(fp_two.glob('*.jpg')) + list(fp_two.glob('*.png')) + list(fp_two.glob('*.bmp'))
 
         orig_files = {}
         mask_files = {}
@@ -257,7 +258,8 @@ class LeftPane(PanedWindow):
         boxes = {}
         for filename, filepath in mask_files.items():
             img = Image.open(filepath)
-            boxer = scanner.Boxer(img, 30)
+            width, height = img.size
+            boxer = scanner.Boxer(img, width*0.020)
             boxes[filename] = boxer.get_boxes()
 
         with open((fp_out / 'boxes.json'), "w") as file:
@@ -362,13 +364,14 @@ class RightPane(PanedWindow):
 
         im = Image.open(value)
         im = im.convert('RGB')
+        width, height = im.size
 
         threading.Thread(target=scanner.multi_boxer, args=(self.boxes[key], im, self.master, self.master.window.properties['lang'])).start()
 
         img = np.array(im)
         font = cv2.FONT_HERSHEY_SIMPLEX
         for box in self.boxes[key]:
-            cv2.putText(img, str((box[0], box[1])), (box[0], box[1]-15), font, 2, (255,0,0), 2, cv2.LINE_AA)
+            cv2.putText(img, str((box[0], box[1])), (box[0], box[1]-15), font, width*0.001, (255,0,0), 2, cv2.LINE_AA)
             cv2.rectangle(img, (box[0], box[1]), (box[2], box[3]), (0,255,0), 4)
 
         img = Image.fromarray(img)
