@@ -21,19 +21,18 @@ class Main(PanedWindow):
         super().__init__(root, *args, **kwargs)
         self.left_pane = LeftPane(self, orient=VERTICAL, width=250, showhandle=False)
         self.right_pane = RightPane(self, orient=VERTICAL, showhandle=False)
+        self.items = [self.left_pane.button_frame, self.left_pane.entry_frame, self.right_pane.button_frame]
 
         self.initUI()
         self.initStatus()
 
     def disable(self):
-        self.left_pane.button_frame.disable()
-        self.left_pane.entry_frame.disable()
-        self.right_pane.button_frame.disable()
+        for item in self.items:
+            item.disable()
 
     def enable(self):
-        self.left_pane.button_frame.enable()
-        self.left_pane.entry_frame.enable()
-        self.right_pane.button_frame.enable()
+        for item in self.items:
+            item.enable()
 
     def initStatus(self):
         self.status_text = StringVar()
@@ -111,6 +110,18 @@ class ButtonFrame(Frame):
 
         self.initUI()
 
+    def add_entry(self, key, bindings=()):
+        self.items[key] = Entry(self)
+
+        if bindings:
+            self.functions[key] = bindings[1]
+            self.items[key].bind(bindings[0], self.functions[key])
+
+        self.items[key].pack(side=self.side)
+
+    def get_entry(self, key):
+        return self.items[key].get()
+
     def add_button(self, key, function=None):
         self.functions[key] = function
         self.items[key] = Button(self, text=key, command=function)
@@ -152,7 +163,7 @@ class LeftPane(PanedWindow):
         self.entry_frame.add_entry('FP1')
         self.entry_frame.add_entry('FP2')
         self.entry_frame.add_button_frame('ButtonFrame', CENTER)
-        self.entry_frame.add_button('ButtonFrame', 'Process Paths', self.process)
+        self.entry_frame.add_button('ButtonFrame', 'Process Paths', self.process_thread)
         self.entry_frame.add_button('ButtonFrame', 'Copy Output')
         self.output_box = Text(self)
         self.output_box.config(state=DISABLED)
@@ -166,6 +177,7 @@ class LeftPane(PanedWindow):
         threading.Thread(target=self.process).start()
 
     def process(self):
+        self.master.right_pane.selected = 0
         self.master.disable()
         self.master.status_text.set('Processing...')
         fp_one = Path(self.entry_frame.get_path('FP1'))
@@ -180,6 +192,7 @@ class LeftPane(PanedWindow):
             for file in file_list:
                 mask_files[file.name[:3]] = file
 
+            orig_files = {}
             boxes = {}
             if (fp_out / 'boxes.json').exists():
                 with open((fp_out / 'boxes.json'), "r") as file:
@@ -192,7 +205,12 @@ class LeftPane(PanedWindow):
                 with open((fp_out / 'boxes.json'), "w") as file:
                     json.dump(boxes, file)
 
+            if (fp_out / 'orig.json').exists():
+                with open((fp_out / 'orig.json'), "r") as file:
+                    orig_files = json.load(file)
+
             self.master.right_pane.boxes = boxes
+            self.master.right_pane.orig_files = orig_files
             self.master.right_pane.files = mask_files
             self.master.right_pane.update_composite()
             return False
@@ -202,10 +220,12 @@ class LeftPane(PanedWindow):
         files_one = list(fp_one.glob('*.jpg'))
         files_two = list(fp_two.glob('*.jpg'))
 
+        orig_files = {}
         mask_files = {}
         for file_one in files_one:
             for file_two in files_two:
                 if file_one.name[:3] == file_two.name[:3]:
+                    orig_files[file_one.name[:3]] = (str(file_one), str(file_two))
                     mask_files[file_one.name[:3]] = subtractor.subtract(file_one, file_two, fp_out)
 
         boxes = {}
@@ -217,7 +237,11 @@ class LeftPane(PanedWindow):
         with open((fp_out / 'boxes.json'), "w") as file:
             json.dump(boxes, file)
 
+        with open((fp_out / 'orig.json'), "w") as file:
+            json.dump(orig_files, file)
+
         self.master.right_pane.boxes = boxes
+        self.master.right_pane.orig_files = orig_files
         self.master.right_pane.files = mask_files
         self.master.right_pane.update_composite()
         self.master.enable()
@@ -243,6 +267,7 @@ class RightPane(PanedWindow):
     def __init__(self, root, *args, **kwargs):
         super().__init__(root, *args, **kwargs)
         self.boxes = {}
+        self.orig_files = {}
         self.files = {}
         self.selected = 0
         self.initItems()
@@ -254,12 +279,23 @@ class RightPane(PanedWindow):
         self.button_frame.add_button('Prev', self.cycle_prev)
         self.button_frame.add_label('Fnum')
         self.button_frame.set_label('Fnum', 'File: None')
+        self.button_frame.add_entry('Index', bindings=('<Return>', self.index_entry))
         self.composite_img = None
         self.composite_box = Canvas(self, image=self.composite_img, bg='white')
 
     def initUI(self):
         self.add(self.composite_box)
         self.master.add(self)
+
+    def index_entry(self, event):
+        try:
+            self.selected = int(self.button_frame.get_entry('Index')) - 1
+            list(self.files.items())[self.selected]
+        except (ValueError, IndexError) as e:
+            self.master.status_text.set(str(e))
+            return e
+
+        self.update_composite()
 
     def cycle_next(self):
         if not self.files:
@@ -278,6 +314,12 @@ class RightPane(PanedWindow):
     def update_composite(self):
         if not self.files:
             self.master.status_text.set('./output/ is empty and ./output/.lock exists. Delete /output/ folder')
+            self.master.enable()
+            return None
+
+        if not type(self.selected) is int:
+            self.master.status_text.set('Error: index must be int, not '+str(type(self.selected)))
+            self.master.enable()
             return None
 
         self.button_frame.set_label('Fnum', 'File: '+str(self.selected+1)+'/'+str(len(self.files)))
@@ -285,6 +327,7 @@ class RightPane(PanedWindow):
         self.composite_box.delete("all")
 
         key, value = list(self.files.items())[self.selected]
+
         im = Image.open(value)
         im = im.convert('RGB')
 
@@ -301,6 +344,15 @@ class RightPane(PanedWindow):
 
         self.image_ref = ImageTk.PhotoImage(reim)
         self.composite_box.create_image((0,0), image=self.image_ref, anchor=NW)
+
+        if self.orig_files:
+            fp_one, fp_two = self.orig_files[key]
+            orig = Image.open(fp_one)
+            orig = util.resizeHeight((self.composite_box.winfo_width(), self.composite_box.winfo_height()), orig)
+            self.orig_ref = ImageTk.PhotoImage(orig)
+            self.composite_box.create_image((reim.size[0],0), image=self.orig_ref, anchor=NW)
+
+        return True
 
 root = Tk()
 app = Main(root)
