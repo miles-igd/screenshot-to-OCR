@@ -1,5 +1,8 @@
 *.jpg
 *.png
 *.txt
+FP1/
+FP2/
+output/
 __pycache__/
 _junk/

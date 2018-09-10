@@ -1,9 +1,36 @@
 import numpy as np
 import cv2
+import pytesseract
+import util
+import threading
+import tkinter
 
 from PIL import Image, ImageDraw
 from operator import itemgetter
 from itertools import groupby, tee, islice, chain, product, zip_longest
+
+def multi_boxer(boxes, img, master):
+    master.disable()
+    master.status_text.set('Starting Tesseract...')
+    master.left_pane.output_box.config(state=tkinter.NORMAL)
+    master.left_pane.output_box.delete(1.0, tkinter.END)
+    master.left_pane.output_box.config(state=tkinter.DISABLED)
+    open('output.txt', 'w').close()
+
+    for box in boxes:
+        master.status_text.set('Passing: '+str((box[0], box[1])))
+        cropped = img.crop((box[0] - 10, box[1] - 10, box[2] + 10, box[3] + 10))
+        text = util.fixString(pytesseract.image_to_string(cropped, lang='jpn'))
+
+        with open("output.txt", "a", encoding='utf-8') as out:
+            out.write('-----'+str((box[0], box[1]))+'-----'+'\n')
+            out.write(text)
+        master.left_pane.output_box.config(state=tkinter.NORMAL)
+        master.left_pane.output_box.insert(tkinter.END, '-----'+str((box[0], box[1]))+'-----'+'\n'+text+'\n')
+        master.left_pane.output_box.config(state=tkinter.DISABLED)
+    master.status_text.set('Finished.')
+    master.enable()
+
 
 class Boxer:
     def __init__(self, img, threshold, anchor=(0,0)):

@@ -2,6 +2,7 @@ from tkinter import *
 from PIL import ImageGrab, Image, ImageTk
 
 def start(root, re_func, event=None):
+    root.master.disable()
     clipper_window = Toplevel(root, width=root.winfo_screenwidth(), height=root.winfo_screenheight())
     clipper_app = Clipper(clipper_window, re_func, width=root.winfo_screenwidth(), height=root.winfo_screenheight())
 
