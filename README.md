@@ -1,6 +1,6 @@
 ## Screenshot to OCR, and Text Isolator
 
-Given an image with text, and an image without. This will isolate the text and pass it through Tesseract with pytesseract.
+Given an image with text, and an image without. This will isolate the text and pass it through Tesseract using pytesseract.
 
 #### Prerequisites
 
