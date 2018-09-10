@@ -22,4 +22,5 @@ pyperclip
 ```
 #### Instructions
 ```
+python app.py
 ```
