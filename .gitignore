@@ -1,6 +1,7 @@
 *.jpg
 *.png
 *.txt
+*.json
 FP1/
 FP2/
 output/

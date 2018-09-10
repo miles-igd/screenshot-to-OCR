@@ -1,5 +1,6 @@
 from pathlib import Path
 from tkinter import filedialog
+from tkinter import ttk
 from tkinter import *
 from PIL import Image, ImageTk, ImageDraw
 import pyperclip
@@ -17,8 +18,10 @@ import clipper
 import subtractor
 
 class Main(PanedWindow):
-    def __init__(self, root, *args, **kwargs):
+    def __init__(self, root, window, *args, **kwargs):
         super().__init__(root, *args, **kwargs)
+        self.window = window
+
         self.left_pane = LeftPane(self, orient=VERTICAL, width=250, showhandle=False)
         self.right_pane = RightPane(self, orient=VERTICAL, showhandle=False)
         self.items = [self.left_pane.button_frame, self.left_pane.entry_frame, self.right_pane.button_frame]
@@ -110,6 +113,18 @@ class ButtonFrame(Frame):
 
         self.initUI()
 
+    def add_combobox(self, key, vals, bindings=()):
+        self.items[key] = ttk.Combobox(self, width=4, values=vals)
+
+        if bindings:
+            self.functions[key] = bindings[1]
+            self.items[key].bind(bindings[0], self.functions[key])
+
+        self.items[key].pack(side=self.side)
+
+    def set_combobox(self, key, value):
+        self.items[key].set(value)
+
     def add_entry(self, key, bindings=()):
         self.items[key] = Entry(self)
 
@@ -152,6 +167,9 @@ class ButtonFrame(Frame):
 class LeftPane(PanedWindow):
     def __init__(self, root, *args, **kwargs):
         super().__init__(root, *args, **kwargs)
+        self.lang = self.master.window.properties['lang']
+
+        self.choices = util.findLangs()
         self.initItems()
         self.initUI()
 
@@ -159,6 +177,11 @@ class LeftPane(PanedWindow):
         self.button_frame = ButtonFrame(self, side=LEFT)
         self.button_frame.add_button('Clipper', lambda:clipper.start(self, self.clipper))
         self.button_frame.add_button('Clear', self.clear)
+        self.button_frame.add_label('Lang')
+        self.button_frame.set_label('Lang', 'lang:')
+        self.button_frame.add_combobox('Language', self.choices, ('<<ComboboxSelected>>', self.update_properties))
+        self.button_frame.set_combobox('Language', self.lang)
+
         self.entry_frame = EntryFrame(self)
         self.entry_frame.add_entry('FP1')
         self.entry_frame.add_entry('FP2')
@@ -172,6 +195,9 @@ class LeftPane(PanedWindow):
         self.add(self.button_frame)
         self.add(self.output_box, height=250)
         self.master.add(self)
+
+    def update_properties(self, event):
+        self.master.window.properties['lang'] = event.widget.get()
 
     def process_thread(self):
         threading.Thread(target=self.process).start()
@@ -253,7 +279,13 @@ class LeftPane(PanedWindow):
         self.output_box.config(state=DISABLED)
 
     def clipper(self, im):
-        text = util.fixString(pytesseract.image_to_string(im, lang='jpn'))
+        try:
+            text = util.fixString(pytesseract.image_to_string(im, lang=self.lang))
+        except pytesseract.pytesseract.TesseractError as e:
+            self.master.status_text.set(str(e))
+            self.master.enable()
+            return None
+
         with open("output.txt", "w", encoding='utf-8') as out:
             out.write(text)
         pyperclip.copy(text)
@@ -331,7 +363,7 @@ class RightPane(PanedWindow):
         im = Image.open(value)
         im = im.convert('RGB')
 
-        threading.Thread(target=scanner.multi_boxer, args=(self.boxes[key], im, self.master)).start()
+        threading.Thread(target=scanner.multi_boxer, args=(self.boxes[key], im, self.master, self.master.window.properties['lang'])).start()
 
         img = np.array(im)
         font = cv2.FONT_HERSHEY_SIMPLEX
@@ -354,6 +386,22 @@ class RightPane(PanedWindow):
 
         return True
 
-root = Tk()
-app = Main(root)
-root.mainloop()
+class Window():
+    def __init__(self):
+        self.root = Tk()
+        if Path('properties.json').exists():
+            with open('properties.json', "r") as file:
+                self.properties = json.load(file)
+        else:
+            self.properties = {'lang': 'eng'}
+        self.app = Main(self.root, self)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        with open('properties.json', "w") as file:
+            json.dump(self.properties, file)
+
+with Window() as window:
+    window.root.mainloop()
