@@ -366,7 +366,12 @@ class RightPane(PanedWindow):
         im = im.convert('RGB')
         width, height = im.size
 
-        threading.Thread(target=scanner.multi_boxer, args=(self.boxes[key], im, self.master, self.master.window.properties['lang'])).start()
+        if self.orig_files:
+            fp_one, fp_two = self.orig_files[key]
+            orig = Image.open(fp_one)
+            threading.Thread(target=scanner.multi_boxer, args=(self.boxes[key], orig, self.master, self.master.window.properties['lang'])).start()
+        else:
+            threading.Thread(target=scanner.multi_boxer, args=(self.boxes[key], im, self.master, self.master.window.properties['lang'])).start()
 
         img = np.array(im)
         font = cv2.FONT_HERSHEY_SIMPLEX
