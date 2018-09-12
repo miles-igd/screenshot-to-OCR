@@ -282,7 +282,7 @@ class LeftPane(PanedWindow):
 
     def clipper(self, im):
         try:
-            text = util.fixString(pytesseract.image_to_string(im, lang=self.lang))
+            text = util.fixString(pytesseract.image_to_string(im, lang=self.master.window.properties['lang']))
         except pytesseract.pytesseract.TesseractError as e:
             self.master.status_text.set(str(e))
             self.master.enable()
