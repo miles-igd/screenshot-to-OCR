@@ -244,8 +244,8 @@ class LeftPane(PanedWindow):
         else:
             (fp_out / '.lock').touch(exist_ok=True)
 
-        files_one = list(fp_one.glob('*.jpg')) + list(fp_one.glob('*.png')) + list(fp_one.glob('*.bmp'))
-        files_two = list(fp_two.glob('*.jpg')) + list(fp_two.glob('*.png')) + list(fp_two.glob('*.bmp'))
+        files_one = list(fp_one.glob('*.jpg')) + list(fp_one.glob('*.png')) + list(fp_one.glob('*.bmp')) + list(fp_one.glob('*.psd'))
+        files_two = list(fp_two.glob('*.jpg')) + list(fp_two.glob('*.png')) + list(fp_two.glob('*.bmp')) + list(fp_two.glob('*.psd'))
 
         orig_files = {}
         mask_files = {}
