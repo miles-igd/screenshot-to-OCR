@@ -19,7 +19,7 @@ def multi_boxer(boxes, img, master, language):
 
     for box in boxes:
         master.status_text.set('Passing: '+str((box[0], box[1])))
-        cropped = img.crop((box[0] - 10, box[1] - 10, box[2] + 10, box[3] + 10))
+        cropped = img.crop((box[0], box[1], box[2], box[3]))
         text = util.fixString(pytesseract.image_to_string(cropped, lang=language))
 
         with open("output.txt", "a", encoding='utf-8') as out:

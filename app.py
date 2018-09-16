@@ -227,7 +227,8 @@ class LeftPane(PanedWindow):
                 for filename, filepath in mask_files.items():
                     img = Image.open(filepath)
                     width, height = img.size
-                    boxer = scanner.Boxer(img, width*0.020)
+                    img = util.dilateImage(img)
+                    boxer = scanner.Boxer(img, 0)
                     boxes[filename] = boxer.get_boxes()
                 with open((fp_out / 'boxes.json'), "w") as file:
                     json.dump(boxes, file)
@@ -259,7 +260,8 @@ class LeftPane(PanedWindow):
         for filename, filepath in mask_files.items():
             img = Image.open(filepath)
             width, height = img.size
-            boxer = scanner.Boxer(img, width*0.020)
+            img = util.dilateImage(img)
+            boxer = scanner.Boxer(img, 0)
             boxes[filename] = boxer.get_boxes()
 
         with open((fp_out / 'boxes.json'), "w") as file:
@@ -401,7 +403,7 @@ class Window():
             with open('properties.json', "r") as file:
                 self.properties = json.load(file)
         else:
-            self.properties = {'lang': 'eng'}
+            self.properties = {'lang': 'eng', 'FP1': './FP1', 'FP2': './FP2'}
         self.app = Main(self.root, self)
 
     def __enter__(self):
