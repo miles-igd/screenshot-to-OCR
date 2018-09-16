@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw
 from operator import itemgetter
 from itertools import groupby, tee, islice, chain, product, zip_longest
 
-def multi_boxer(boxes, img, master, language):
+def multi_boxer(boxes, img, master, language, fix = False):
     master.disable()
     master.status_text.set('Starting Tesseract...')
     master.left_pane.output_box.config(state=tkinter.NORMAL)
@@ -20,7 +20,9 @@ def multi_boxer(boxes, img, master, language):
     for box in boxes:
         master.status_text.set('Passing: '+str((box[0], box[1])))
         cropped = img.crop((box[0], box[1], box[2], box[3]))
-        text = util.fixString(pytesseract.image_to_string(cropped, lang=language))
+        text = pytesseract.image_to_string(cropped, lang=language)
+        if fix:
+            text = util.fixString(text)
 
         with open("output.txt", "a", encoding='utf-8') as out:
             out.write('\n'+'-----'+str((box[0], box[1]))+'-----'+'\n')

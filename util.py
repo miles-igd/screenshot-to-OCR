@@ -18,7 +18,7 @@ def dilateImage(img):
     img = np.array(img)
     closek = np.ones((2,2),np.uint8)
     dilation = cv2.dilate(img,closek,iterations = 1)
-    kernel = np.ones((30,30),np.uint8)
+    kernel = np.ones((27,27),np.uint8)
     erosion = cv2.erode(dilation,kernel,iterations = 1)
     img = Image.fromarray(erosion)
     return img

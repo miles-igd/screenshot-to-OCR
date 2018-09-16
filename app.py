@@ -284,7 +284,9 @@ class LeftPane(PanedWindow):
 
     def clipper(self, im):
         try:
-            text = util.fixString(pytesseract.image_to_string(im, lang=self.master.window.properties['lang']))
+            text = pytesseract.image_to_string(im, lang=self.master.window.properties['lang'])
+            if self.master.window.properties['lang'] in ['jpn', 'jpn_vert']:
+                text = util.fixString(text)
         except pytesseract.pytesseract.TesseractError as e:
             self.master.status_text.set(str(e))
             self.master.enable()
@@ -371,9 +373,9 @@ class RightPane(PanedWindow):
         if self.orig_files:
             fp_one, fp_two = self.orig_files[key]
             orig = Image.open(fp_one)
-            threading.Thread(target=scanner.multi_boxer, args=(self.boxes[key], orig, self.master, self.master.window.properties['lang'])).start()
+            threading.Thread(target=scanner.multi_boxer, args=(self.boxes[key], orig, self.master, self.master.window.properties['lang']), kwargs = {'fix': self.master.window.properties['lang'] in ['jpn', 'jpn_vert']}).start()
         else:
-            threading.Thread(target=scanner.multi_boxer, args=(self.boxes[key], im, self.master, self.master.window.properties['lang'])).start()
+            threading.Thread(target=scanner.multi_boxer, args=(self.boxes[key], im, self.master, self.master.window.properties['lang']), kwargs = {'fix': self.master.window.properties['lang'] in ['jpn', 'jpn_vert']}).start()
 
         img = np.array(im)
         font = cv2.FONT_HERSHEY_SIMPLEX
