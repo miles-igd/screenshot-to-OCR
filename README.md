@@ -6,7 +6,7 @@ Given an image with text, and an image without. This will isolate the text and p
 
 ```
 Python 3.6+
-Tesseract 3.05
+Tesseract 3.05 or 4.00+
 ```
 ##### Libraries
 ```
