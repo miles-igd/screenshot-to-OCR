@@ -22,7 +22,7 @@ pyperclip
 ![File 1](https://imgs.xkcd.com/comics/complex_numbers.png)
 ***
 ![File 2](https://i.imgur.com/t90F4U8.png)
-#### Outputs (File #1 and File #2)
+#### Outputs (Boxes and Text)
 ![Boxes](https://i.imgur.com/8MLWIoY.png)
 ***
 ```
