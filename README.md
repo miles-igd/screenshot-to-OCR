@@ -10,7 +10,7 @@ Tesseract 3.05 or 4.00+
 ```
 ##### Libraries
 ```
-OpenCV2
+opencv-python
 pytesseract
 numpy
 Pillow
